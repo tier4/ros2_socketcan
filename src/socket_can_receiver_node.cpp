@@ -31,12 +31,18 @@ namespace drivers
 namespace socketcan
 {
 SocketCanReceiverNode::SocketCanReceiverNode(rclcpp::NodeOptions options)
-: lc::LifecycleNode("socket_can_receiver_node", options)
+: lc::LifecycleNode("socket_can_receiver_node", options),
+  updater_(this)
 {
   interface_ = this->declare_parameter("interface", "can0");
   double interval_sec = this->declare_parameter("interval_sec", 0.01);
   interval_ns_ = std::chrono::duration_cast<std::chrono::nanoseconds>(
     std::chrono::duration<double>(interval_sec));
+
+  // Diagnostic Updater
+  updater_.setHardwareID("ros2_socketcan");
+  updater_.add("socket_can_receiver", this, &SocketCanReceiverNode::checkRead);
+  errmsg_ = "OK";
 
   RCLCPP_INFO(this->get_logger(), "interface: %s", interface_.c_str());
   RCLCPP_INFO(this->get_logger(), "interval(s): %f", interval_sec);
@@ -97,6 +103,19 @@ LNI::CallbackReturn SocketCanReceiverNode::on_shutdown(const lc::State & state)
   return LNI::CallbackReturn::SUCCESS;
 }
 
+void SocketCanReceiverNode::checkRead(diagnostic_updater::DiagnosticStatusWrapper & stat)
+{
+  using DiagStatus = diagnostic_msgs::msg::DiagnosticStatus;
+  int8_t level = DiagStatus::OK;
+  if (errmsg_ == "OK") {
+      level = DiagStatus::OK;
+  } else {
+      level = DiagStatus::ERROR;
+  }
+
+  stat.summary(level, errmsg_);
+}
+
 void SocketCanReceiverNode::receive()
 {
   CanId receive_id{};
@@ -111,13 +130,16 @@ void SocketCanReceiverNode::receive()
 
     try {
       receive_id = receiver_->receive(frame_msg.data.data(), interval_ns_);
+      errmsg_ = "OK";
     } catch (const std::exception & ex) {
+      errmsg_ = ex.what();
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
         "Error receiving CAN message: %s - %s",
         interface_.c_str(), ex.what());
       continue;
     }
+    updater_.force_update();
     frame_msg.header.stamp = this->now();
     frame_msg.id = receive_id.identifier();
     frame_msg.is_rtr = (receive_id.frame_type() == FrameType::REMOTE);
