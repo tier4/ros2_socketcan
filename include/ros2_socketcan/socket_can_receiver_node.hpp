@@ -81,8 +81,8 @@ private:
 
   // Diagnostic Updater
   diagnostic_updater::Updater updater_;
-  void checkRead(diagnostic_updater::DiagnosticStatusWrapper & stat);
-  std::string errmsg_;
+  void checkSocketCanReceiverStatus(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  std::string error_msg_;
 };
 }  // namespace socketcan
 }  // namespace drivers

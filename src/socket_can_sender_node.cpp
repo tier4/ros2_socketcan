@@ -40,8 +40,8 @@ SocketCanSenderNode::SocketCanSenderNode(rclcpp::NodeOptions options)
 
   // Diagnostic Updater
   updater_.setHardwareID("ros2_socketcan");
-  updater_.add("socket_can_sender", this, &SocketCanSenderNode::checkSend);
-  errmsg_ = "OK";
+  updater_.add("socket_can_sender", this, &SocketCanSenderNode::checkSocketCanSenderStatus);
+  error_msg_ = "OK";
 
   RCLCPP_INFO(this->get_logger(), "interface: %s", interface_.c_str());
   RCLCPP_INFO(this->get_logger(), "timeout(s): %f", timeout_sec);
@@ -96,16 +96,16 @@ LNI::CallbackReturn SocketCanSenderNode::on_shutdown(const lc::State & state)
   return LNI::CallbackReturn::SUCCESS;
 }
 
-void SocketCanSenderNode::checkSend(diagnostic_updater::DiagnosticStatusWrapper & stat)
+void SocketCanSenderNode::checkSocketCanSenderStatus(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   using DiagStatus = diagnostic_msgs::msg::DiagnosticStatus;
   int8_t level = DiagStatus::OK;
-  if (errmsg_ == "OK") {
+  if (error_msg_ == "OK") {
       level = DiagStatus::OK;
   } else {
       level = DiagStatus::ERROR;
   }
-  stat.summary(level, errmsg_);
+  stat.summary(level, error_msg_);
 }
 
 void SocketCanSenderNode::on_frame(const can_msgs::msg::Frame::SharedPtr msg)
@@ -124,9 +124,9 @@ void SocketCanSenderNode::on_frame(const can_msgs::msg::Frame::SharedPtr msg)
       CanId(msg->id, type, StandardFrame);
     try {
       sender_->send(msg->data.data(), msg->dlc, send_id, timeout_ns_);
-      errmsg_ = "OK";
+      error_msg_ = "OK";
     } catch (const std::exception & ex) {
-      errmsg_ = ex.what();
+      error_msg_ = ex.what();
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
         "Error sending CAN message: %s - %s",

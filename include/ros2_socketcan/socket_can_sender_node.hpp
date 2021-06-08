@@ -79,8 +79,8 @@ private:
 
   // Diagnostic Updater
   diagnostic_updater::Updater updater_;
-  void checkSend(diagnostic_updater::DiagnosticStatusWrapper & stat);
-  std::string errmsg_;
+  void checkSocketCanSenderStatus(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  std::string error_msg_;
 };
 }  // namespace socketcan
 }  // namespace drivers
