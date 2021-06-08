@@ -38,6 +38,11 @@ SocketCanReceiverNode::SocketCanReceiverNode(rclcpp::NodeOptions options)
   interval_ns_ = std::chrono::duration_cast<std::chrono::nanoseconds>(
     std::chrono::duration<double>(interval_sec));
 
+  // Diagnostic Updater
+  updater_.setHardwareID("ros2_socketcan");
+  updater_.add("socket_can_receiver", this, &SocketCanReceiverNode::checkSocketCanReceiverStatus);
+  error_msg_ = "OK";
+
   RCLCPP_INFO(this->get_logger(), "interface: %s", interface_.c_str());
   RCLCPP_INFO(this->get_logger(), "interval(s): %f", interval_sec);
 }
@@ -97,6 +102,19 @@ LNI::CallbackReturn SocketCanReceiverNode::on_shutdown(const lc::State & state)
   return LNI::CallbackReturn::SUCCESS;
 }
 
+void SocketCanReceiverNode::checkSocketCanReceiverStatus(diagnostic_updater::DiagnosticStatusWrapper & stat)
+{
+  using DiagStatus = diagnostic_msgs::msg::DiagnosticStatus;
+  int8_t level = DiagStatus::OK;
+  if (error_msg_ == "OK") {
+      level = DiagStatus::OK;
+  } else {
+      level = DiagStatus::ERROR;
+  }
+
+  stat.summary(level, error_msg_);
+}
+
 void SocketCanReceiverNode::receive()
 {
   CanId receive_id{};
@@ -111,7 +129,9 @@ void SocketCanReceiverNode::receive()
 
     try {
       receive_id = receiver_->receive(frame_msg.data.data(), interval_ns_);
+      error_msg_ = "OK";
     } catch (const std::exception & ex) {
+      error_msg_ = ex.what();
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 1000,
         "Error receiving CAN message: %s - %s",
