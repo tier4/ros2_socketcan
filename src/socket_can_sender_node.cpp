@@ -39,7 +39,7 @@ SocketCanSenderNode::SocketCanSenderNode(rclcpp::NodeOptions options)
     std::chrono::duration<double>(timeout_sec));
 
   // Diagnostic Updater
-  updater_.setHardwareID("ros2_socketcan");
+  updater_.setHardwareID("socket_can_sender");
   updater_.add("socket_can_sender", this, &SocketCanSenderNode::checkSocketCanSenderStatus);
   error_msg_ = "OK";
 
