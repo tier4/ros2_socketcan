@@ -27,6 +27,8 @@
 #include <can_msgs/msg/frame.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
 
+#include <diagnostic_updater/diagnostic_updater.hpp>
+
 #include <memory>
 #include <thread>
 #include <string>

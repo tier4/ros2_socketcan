@@ -31,7 +31,8 @@ namespace drivers
 namespace socketcan
 {
 SocketCanReceiverNode::SocketCanReceiverNode(rclcpp::NodeOptions options)
-: lc::LifecycleNode("socket_can_receiver_node", options)
+: lc::LifecycleNode("socket_can_receiver_node", options),
+  updater_(this)
 {
   interface_ = this->declare_parameter("interface", "can0");
   double interval_sec = this->declare_parameter("interval_sec", 0.01);
@@ -138,6 +139,7 @@ void SocketCanReceiverNode::receive()
         interface_.c_str(), ex.what());
       continue;
     }
+    updater_.force_update();
     frame_msg.header.stamp = this->now();
     frame_msg.id = receive_id.identifier();
     frame_msg.is_rtr = (receive_id.frame_type() == FrameType::REMOTE);

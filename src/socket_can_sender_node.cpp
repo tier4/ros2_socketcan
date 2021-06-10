@@ -30,7 +30,8 @@ namespace drivers
 namespace socketcan
 {
 SocketCanSenderNode::SocketCanSenderNode(rclcpp::NodeOptions options)
-: lc::LifecycleNode("socket_can_sender_node", options)
+: lc::LifecycleNode("socket_can_sender_node", options),
+  updater_(this)
 {
   interface_ = this->declare_parameter("interface", "can0");
   double timeout_sec = this->declare_parameter("timeout_sec", 0.01);
@@ -130,8 +131,8 @@ void SocketCanSenderNode::on_frame(const can_msgs::msg::Frame::SharedPtr msg)
         this->get_logger(), *this->get_clock(), 1000,
         "Error sending CAN message: %s - %s",
         interface_.c_str(), ex.what());
-      return;
     }
+    updater_.force_update();
   }
 }
 
