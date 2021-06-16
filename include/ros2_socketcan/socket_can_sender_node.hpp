@@ -27,6 +27,8 @@
 #include <can_msgs/msg/frame.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
 
+#include <diagnostic_updater/diagnostic_updater.hpp>
+
 #include <memory>
 #include <string>
 
@@ -74,6 +76,11 @@ private:
   rclcpp::Subscription<can_msgs::msg::Frame>::SharedPtr frames_sub_;
   std::unique_ptr<SocketCanSender> sender_;
   std::chrono::nanoseconds timeout_ns_;
+
+  // Diagnostic Updater
+  diagnostic_updater::Updater updater_;
+  void checkSocketCanSenderStatus(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  std::string error_msg_;
 };
 }  // namespace socketcan
 }  // namespace drivers

@@ -27,6 +27,8 @@
 #include <can_msgs/msg/frame.hpp>
 #include <lifecycle_msgs/msg/state.hpp>
 
+#include <diagnostic_updater/diagnostic_updater.hpp>
+
 #include <memory>
 #include <thread>
 #include <string>
@@ -76,6 +78,11 @@ private:
   std::unique_ptr<SocketCanReceiver> receiver_;
   std::unique_ptr<std::thread> receiver_thread_;
   std::chrono::nanoseconds interval_ns_;
+
+  // Diagnostic Updater
+  diagnostic_updater::Updater updater_;
+  void checkSocketCanReceiverStatus(diagnostic_updater::DiagnosticStatusWrapper & stat);
+  std::string error_msg_;
 };
 }  // namespace socketcan
 }  // namespace drivers
