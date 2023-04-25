@@ -78,6 +78,7 @@ private:
   std::unique_ptr<SocketCanReceiver> receiver_;
   std::unique_ptr<std::thread> receiver_thread_;
   std::chrono::nanoseconds interval_ns_;
+  bool auto_socket_reopen_;
 
   // Diagnostic Updater
   diagnostic_updater::Updater updater_;
