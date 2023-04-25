@@ -19,6 +19,7 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <utility>
 
 namespace lc = rclcpp_lifecycle;
@@ -37,6 +38,7 @@ SocketCanSenderNode::SocketCanSenderNode(rclcpp::NodeOptions options)
   double timeout_sec = this->declare_parameter("timeout_sec", 0.01);
   timeout_ns_ = std::chrono::duration_cast<std::chrono::nanoseconds>(
     std::chrono::duration<double>(timeout_sec));
+  auto_socket_reopen_ = this->declare_parameter("auto_socket_reopen", false);
 
   // Diagnostic Updater
   updater_.setHardwareID("socket_can_sender");
@@ -45,6 +47,9 @@ SocketCanSenderNode::SocketCanSenderNode(rclcpp::NodeOptions options)
 
   RCLCPP_INFO(this->get_logger(), "interface: %s", interface_.c_str());
   RCLCPP_INFO(this->get_logger(), "timeout(s): %f", timeout_sec);
+  RCLCPP_INFO(
+    this->get_logger(), "auto_socket_reopen: %s",
+    auto_socket_reopen_ ? "true" : "false");
 }
 
 LNI::CallbackReturn SocketCanSenderNode::on_configure(const lc::State & state)
@@ -57,6 +62,7 @@ LNI::CallbackReturn SocketCanSenderNode::on_configure(const lc::State & state)
     RCLCPP_ERROR(
       this->get_logger(), "Error opening CAN sender: %s - %s",
       interface_.c_str(), ex.what());
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     return LNI::CallbackReturn::FAILURE;
   }
 
@@ -131,6 +137,9 @@ void SocketCanSenderNode::on_frame(const can_msgs::msg::Frame::SharedPtr msg)
         this->get_logger(), *this->get_clock(), 1000,
         "Error sending CAN message: %s - %s",
         interface_.c_str(), ex.what());
+      if (auto_socket_reopen_) {
+        this->deactivate();
+      }
     }
     updater_.force_update();
   }
