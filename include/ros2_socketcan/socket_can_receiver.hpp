@@ -75,6 +75,8 @@ public:
     return ret;
   }
 
+  bool lost_device() const noexcept;
+
 private:
   // Wait for file descriptor to be available to send data via select()
   SOCKETCAN_LOCAL void wait(const std::chrono::nanoseconds timeout) const;

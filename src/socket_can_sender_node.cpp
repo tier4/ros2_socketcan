@@ -138,7 +138,9 @@ void SocketCanSenderNode::on_frame(const can_msgs::msg::Frame::SharedPtr msg)
         "Error sending CAN message: %s - %s",
         interface_.c_str(), ex.what());
       if (auto_socket_reopen_) {
-        this->deactivate();
+        if (sender_->lost_device()) {
+          this->deactivate();
+        }
       }
     }
     updater_.force_update();

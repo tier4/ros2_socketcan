@@ -39,6 +39,8 @@ struct timeval to_timeval(const std::chrono::nanoseconds timeout) noexcept;
 /// Create a fd_set for use with select() that only contains the specified file descriptor
 fd_set single_set(int32_t file_descriptor) noexcept;
 
+bool lost_device(int32_t file_descriptor) noexcept;
+
 }  // namespace socketcan
 }  // namespace drivers
 

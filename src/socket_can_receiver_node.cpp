@@ -144,9 +144,11 @@ void SocketCanReceiverNode::receive()
         "Error receiving CAN message: %s - %s",
         interface_.c_str(), ex.what());
       if (auto_socket_reopen_) {
-        updater_.force_update();
-        this->deactivate();
-        return;
+        if (receiver_->lost_device()) {
+          updater_.force_update();
+          this->deactivate();
+          return;
+        }
       }
       continue;
     }
