@@ -38,6 +38,7 @@ def generate_launch_description():
             'interface': LaunchConfiguration('interface'),
             'timeout_sec':
             LaunchConfiguration('timeout_sec'),
+            'auto_socket_reopen': LaunchConfiguration('auto_socket_reopen'),
         }],
         output='screen')
 
@@ -73,12 +74,67 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('auto_activate')),
     )
 
+    socket_can_sender_cleanup_event_handler = RegisterEventHandler(
+        event_handler=OnStateTransition(
+            target_lifecycle_node=socket_can_sender_node,
+            start_state='deactivating',
+            goal_state='inactive',
+            entities=[
+                EmitEvent(
+                    event=ChangeState(
+                        lifecycle_node_matcher=matches_action(socket_can_sender_node),
+                        transition_id=Transition.TRANSITION_CLEANUP,
+                    ),
+                ),
+            ],
+        ),
+        condition=IfCondition(LaunchConfiguration('auto_socket_reopen')),
+    )
+
+    socket_can_sender_restart_event_handler = RegisterEventHandler(
+        event_handler=OnStateTransition(
+            target_lifecycle_node=socket_can_sender_node,
+            start_state='cleaningup',
+            goal_state='unconfigured',
+            entities=[
+                EmitEvent(
+                    event=ChangeState(
+                        lifecycle_node_matcher=matches_action(socket_can_sender_node),
+                        transition_id=Transition.TRANSITION_CONFIGURE,
+                    ),
+                ),
+            ],
+        ),
+        condition=IfCondition(LaunchConfiguration('auto_socket_reopen')),
+    )
+
+    socket_can_sender_retry_configure_event_handler = RegisterEventHandler(
+        event_handler=OnStateTransition(
+            target_lifecycle_node=socket_can_sender_node,
+            start_state='configuring',
+            goal_state='unconfigured',
+            entities=[
+                EmitEvent(
+                    event=ChangeState(
+                        lifecycle_node_matcher=matches_action(socket_can_sender_node),
+                        transition_id=Transition.TRANSITION_CONFIGURE,
+                    ),
+                ),
+            ],
+        ),
+        condition=IfCondition(LaunchConfiguration('auto_socket_reopen')),
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument('interface', default_value='can0'),
         DeclareLaunchArgument('timeout_sec', default_value='0.01'),
         DeclareLaunchArgument('auto_configure', default_value='true'),
         DeclareLaunchArgument('auto_activate', default_value='true'),
+        DeclareLaunchArgument('auto_socket_reopen', default_value='false'),
         socket_can_sender_node,
         socket_can_sender_configure_event_handler,
         socket_can_sender_activate_event_handler,
+        socket_can_sender_cleanup_event_handler,
+        socket_can_sender_restart_event_handler,
+        socket_can_sender_retry_configure_event_handler,
     ])

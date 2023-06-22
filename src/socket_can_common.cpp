@@ -101,5 +101,24 @@ fd_set single_set(int32_t file_descriptor) noexcept
 
   return descriptor_set;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+bool lost_device(int32_t file_descriptor) noexcept
+{
+
+  struct sockaddr_can addr;
+  socklen_t len = sizeof(addr);
+  if(0 != getsockname(file_descriptor, reinterpret_cast<struct sockaddr *>(&addr), &len)) {
+    return true;
+  }
+
+  struct ifreq ifr;
+  ifr.ifr_ifindex = addr.can_ifindex;
+  if (0 != ioctl(file_descriptor, static_cast<uint32_t>(SIOCGIFNAME), &ifr)) {
+    return true;
+  }
+
+  return false;
+}
 }  // namespace socketcan
 }  // namespace drivers

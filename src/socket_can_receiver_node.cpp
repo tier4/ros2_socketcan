@@ -19,6 +19,7 @@
 #include <chrono>
 #include <memory>
 #include <string>
+#include <thread>
 #include <utility>
 
 namespace lc = rclcpp_lifecycle;
@@ -38,6 +39,7 @@ SocketCanReceiverNode::SocketCanReceiverNode(rclcpp::NodeOptions options)
   double interval_sec = this->declare_parameter("interval_sec", 0.01);
   interval_ns_ = std::chrono::duration_cast<std::chrono::nanoseconds>(
     std::chrono::duration<double>(interval_sec));
+  auto_socket_reopen_ = this->declare_parameter("auto_socket_reopen", false);
 
   // Diagnostic Updater
   updater_.setHardwareID("socket_can_receiver");
@@ -46,6 +48,9 @@ SocketCanReceiverNode::SocketCanReceiverNode(rclcpp::NodeOptions options)
 
   RCLCPP_INFO(this->get_logger(), "interface: %s", interface_.c_str());
   RCLCPP_INFO(this->get_logger(), "interval(s): %f", interval_sec);
+  RCLCPP_INFO(
+    this->get_logger(), "auto_socket_reopen: %s",
+    auto_socket_reopen_ ? "true" : "false");
 }
 
 LNI::CallbackReturn SocketCanReceiverNode::on_configure(const lc::State & state)
@@ -58,6 +63,7 @@ LNI::CallbackReturn SocketCanReceiverNode::on_configure(const lc::State & state)
     RCLCPP_ERROR(
       this->get_logger(), "Error opening CAN receiver: %s - %s",
       interface_.c_str(), ex.what());
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     return LNI::CallbackReturn::FAILURE;
   }
 
@@ -137,6 +143,13 @@ void SocketCanReceiverNode::receive()
         this->get_logger(), *this->get_clock(), 1000,
         "Error receiving CAN message: %s - %s",
         interface_.c_str(), ex.what());
+      if (auto_socket_reopen_) {
+        if (receiver_->lost_device()) {
+          updater_.force_update();
+          this->deactivate();
+          return;
+        }
+      }
       continue;
     }
     updater_.force_update();

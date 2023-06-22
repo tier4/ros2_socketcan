@@ -105,6 +105,8 @@ public:
   /// Get the default CAN id
   CanId default_id() const noexcept;
 
+  bool lost_device() const noexcept;
+
 private:
   // Underlying implementation of sending, data is assumed to be of an appropriate length
   void send_impl(

@@ -83,5 +83,11 @@ CanId SocketCanReceiver::receive(void * const data, const std::chrono::nanosecon
   return CanId{frame.can_id, data_length};
 }
 
+////////////////////////////////////////////////////////////////////////////////
+bool SocketCanReceiver::lost_device() const noexcept
+{
+  return drivers::socketcan::lost_device(m_file_descriptor);
+}
+
 }  // namespace socketcan
 }  // namespace drivers
